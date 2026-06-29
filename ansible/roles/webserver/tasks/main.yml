@@ -1,0 +1,64 @@
+---
+# webserver/tasks/main.yml
+
+- name: Install Nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+  become: true
+
+- name: Allow HTTP through firewall
+  community.general.ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+  become: true
+
+- name: Allow HTTPS through firewall
+  community.general.ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+  become: true
+
+- name: Deploy custom Nginx config
+  ansible.builtin.template:
+    src: nginx.conf.j2   # Template file in roles/webserver/templates/
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Reload Nginx   # This triggers the handler below when config changes
+
+- name: Ensure Nginx is started and enabled
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes
+  become: true
+
+- name: Create web root directory
+  ansible.builtin.file:
+    path: /var/www/html
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0755"
+  become: true
+
+- name: Deploy sample index page
+  ansible.builtin.copy:
+    content: |
+      <!DOCTYPE html>
+      <html>
+        <head><title>GitOps Lab</title></head>
+        <body>
+          <h1>Deployed by Ansible on {{ inventory_hostname }}</h1>
+          <p>Server IP: {{ ansible_host }}</p>
+        </body>
+      </html>
+    dest: /var/www/html/index.html
+    owner: www-data
+    group: www-data
+  become: true

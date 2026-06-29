@@ -1,0 +1,27 @@
+---
+# site.yml — Master playbook
+# Running this configures your ENTIRE infrastructure from scratch
+
+# ── Common configuration for ALL servers ─────────────────────
+- name: Apply common configuration to all servers
+  hosts: all
+  roles:
+    - common
+
+# ── Web servers ───────────────────────────────────────────────
+- name: Configure web servers
+  hosts: webservers
+  roles:
+    - webserver
+
+# ── Database servers ──────────────────────────────────────────
+- name: Configure database servers
+  hosts: databases
+  roles:
+    - database
+
+# ── Monitoring servers ────────────────────────────────────────
+- name: Configure monitoring stack
+  hosts: monitoring
+  roles:
+    - monitoring

@@ -1,0 +1,9 @@
+---
+# Handlers are tasks that only run when "notified" by another task
+# This is useful for reloading services only when their config actually changed
+
+- name: Reload Nginx
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded
+  become: true

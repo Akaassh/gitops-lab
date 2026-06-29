@@ -1,0 +1,51 @@
+---
+# common/tasks/main.yml
+# Tasks that run on ALL servers regardless of their role
+
+- name: Update apt cache and upgrade packages
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600  # Only update cache if older than 1 hour
+  become: true              # Run as root (sudo)
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name:
+      - vim
+      - curl
+      - wget
+      - htop
+      - git
+      - unzip
+      - net-tools
+      - ufw            # Firewall
+    state: present
+  become: true
+
+- name: Set timezone to UTC
+  community.general.timezone:
+    name: UTC
+  become: true
+
+- name: Configure UFW — allow SSH
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+  become: true
+
+- name: Enable UFW firewall
+  community.general.ufw:
+    state: enabled
+    policy: deny   # Default deny, then we add specific allows
+  become: true
+
+- name: Create a deploy user for application deployments
+  ansible.builtin.user:
+    name: deploy
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    create_home: yes
+  become: true

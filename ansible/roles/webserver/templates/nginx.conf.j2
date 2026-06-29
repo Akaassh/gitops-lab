@@ -1,0 +1,21 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html;
+
+    server_name {{ inventory_hostname }};
+
+    access_log /var/log/nginx/access.log;
+    error_log  /var/log/nginx/error.log;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location /health {
+        return 200 "OK: {{ inventory_hostname }}\n";
+        add_header Content-Type text/plain;
+    }
+}
