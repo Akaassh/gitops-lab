@@ -1,56 +1,96 @@
-\# GitOps Home Lab
+# GitOps Home Lab
 
+Infrastructure as Code lab provisioning and configuring a 3-tier environment on Proxmox using OpenTofu and Ansible — built from scratch, including recovering from real infrastructure failures along the way (LVM storage exhaustion, dpkg corruption, clock skew, broken Jinja2 templates).
 
+## Architecture
 
-Infrastructure as Code lab using OpenTofu and Ansible on Proxmox.
+| Layer | Tool | Responsibility |
+|---|---|---|
+| Host | Windows + VMware | Runs Proxmox as a nested VM |
+| Hypervisor | Proxmox VE | Manages VM lifecycle and storage |
+| Provisioning | OpenTofu | Declaratively creates 3 VMs from a cloud-init template |
+| Configuration | Ansible | Installs and configures services over SSH |
+| Workloads | Nginx, PostgreSQL, Prometheus, Grafana | The services being managed |
 
+### VM Roles
 
+| VM | IP | Role |
+|---|---|---|
+| vm-web-01 | 192.168.72.11 | Nginx web server, also acts as Ansible control node |
+| vm-db-01 | 192.168.72.12 | PostgreSQL database |
+| vm-mon-01 | 192.168.72.13 | Prometheus + Grafana monitoring stack |
 
-\## Architecture
+## Stack
 
-\- \*\*vm-web-01\*\* (192.168.72.11) — Nginx web server
+- **Proxmox VE** — hypervisor, nested inside VMware
+- **OpenTofu** — infrastructure as code for VM provisioning
+- **Ansible** — configuration management, idempotent service deployment
+- **Ubuntu 24.04 LTS** — base OS for all VMs
 
-\- \*\*vm-db-01\*\* (192.168.72.12) — PostgreSQL database
+## Usage
 
-\- \*\*vm-mon-01\*\* (192.168.72.13) — Prometheus + Grafana monitoring
-
-
-
-\## Stack
-
-\- \*\*Proxmox VE\*\* — hypervisor (nested in VMware)
-
-\- \*\*OpenTofu\*\* — VM provisioning (IaC)
-
-\- \*\*Ansible\*\* — configuration management
-
-\- \*\*Ubuntu 24.04\*\* — base OS for all VMs
-
-
-
-\## Usage
-
+Provision the VMs:
 ```bash
-
-\# Provision VMs
-
-cd terraform \&\& tofu apply
-
-
-
-\# Configure services
-
-cd ansible \&\& ansible-playbook site.yml
-
+cd terraform
+tofu init
+tofu apply
 ```
 
+Configure all services:
+```bash
+cd ansible
+ansible all -m ping
+ansible-playbook site.yml
+```
+
+## Services
+
+| Service | Endpoint |
+|---|---|
+| Nginx | http://192.168.72.11 |
+| Nginx health check | http://192.168.72.11/health |
+| Prometheus | http://192.168.72.13:9090 |
+| Grafana | http://192.168.72.13:3000 |
+
+## Repository structure
+
+gitops-lab/
+
+├── terraform/
+
+│   ├── main.tf
+
+│   ├── providers.tf
+
+│   ├── variables.tf
+
+│   └── outputs.tf
+
+└── ansible/
+
+├── ansible.cfg
+
+├── site.yml
+
+├── inventory/
+
+│   └── hosts.yml
+
+└── roles/
+
+├── common/
+
+├── webserver/
+
+├── database/
+
+└── monitoring/
 
 
-\## Services
+## What this demonstrates
 
-\- Nginx: `http://192.168.72.11`
-
-\- Prometheus: `http://192.168.72.13:9090`
-
-\- Grafana: `http://192.168.72.13:3000`
-
+- Infrastructure as Code with OpenTofu (declarative VM provisioning)
+- Configuration management with Ansible (roles, handlers, Jinja2 templates)
+- Debugging real production-style failures: LVM thin pool exhaustion, dpkg interruption recovery, NTP clock skew, Jinja2 syntax errors
+- Network segmentation and firewall configuration (UFW)
+- Monitoring stack deployment (Prometheus + Grafana)
